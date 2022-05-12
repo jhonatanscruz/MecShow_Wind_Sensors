@@ -13,23 +13,24 @@ int BAUDRATE = 115200;
  * ***************************************************************************
 */
   unsigned long previousMillis = 0; // Stores the last time reading was made
-  const long interval = 5000;       // Interval at which to read (milliseconds)
+  const long interval = 1000;       // Interval at which to read (milliseconds)
+  float dir_temp[4];
+  float spd_temp[4];
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   Configuração   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-FTTech_Xbee xbee; // Create object with the serial parameter
 
 void setup() {
-  //while(!Serial);
   digitalWrite(52, HIGH); //Put Click 4 ON
   //4-20 Click uses external feeding, so
   //you doesn't need to power it with the click output.
-
+  Serial.begin(9600);
   Serial4.begin(BAUDRATE);
   digitalWrite(A9, HIGH); //Xbee Reset
   xbee.begin(BAUDRATE);
   Serial.println(F("*****************INICIOU*****************"));
+  delay(100);
 }
 
 void loop() {
@@ -37,13 +38,32 @@ void loop() {
   // ===========================================================================================
   //                 ===================== Efetua a Leitura =======================
   // ===========================================================================================
-  // the interval at which you want to blink the LED.
+  // the interval at which you want to read and send data.
   unsigned long currentMillis = millis();
 
   if (currentMillis - previousMillis >= interval) {
 
-    float CH1_4a20 = analogRead(PIN_CH1_4a20) * (3.3/1023);
-    float CH2_4a20 = analogRead(PIN_CH2_4a20) * (3.3/1023);
+    // ==================================== Measuring data ====================================
+    uint8_t aux = 0;
+    float CH1_4a20; // Wind direction
+    float CH2_4a20; // Wind speed
+    
+    while(aux < 3){
+      dir_temp[aux] = analogRead(PIN_CH1_4a20) * (3.3/1023);
+      spd_temp[aux] = analogRead(PIN_CH2_4a20) * (3.3/1023);
+      aux++;
+    }
+
+    //Trata as leituras de Direção do Vento
+    if(dir_temp[0] != 0 && dir_temp[1] != 0 && dir_temp[2] != 0) CH1_4a20 = dir_temp[2];
+    else CH1_4a20 = 0;
+
+    //Trata as leituras de Velocidade do Vento
+    if(spd_temp[0] != 0 && spd_temp[1] != 0 && spd_temp[2] != 0) CH2_4a20 = spd_temp[2];
+    else CH2_4a20 = 0;
+
+  // ==========================================================================================
+
 
     // save the last time reading
     previousMillis = currentMillis;
